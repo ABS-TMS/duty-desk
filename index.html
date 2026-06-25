@@ -348,6 +348,80 @@
   }
   .error-note.active { display: block; }
 
+  /* ---------- PIN gate ---------- */
+  #pinGate {
+    position: fixed;
+    inset: 0;
+    background: var(--navy);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 24px;
+  }
+  #pinGate.hidden { display: none; }
+
+  .pin-card {
+    background: var(--paper);
+    border-top: 4px solid var(--gold);
+    padding: 36px 32px;
+    max-width: 360px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+  }
+
+  .pin-card h2 {
+    margin: 0 0 6px;
+    color: var(--navy);
+    font-size: 1.3rem;
+    font-weight: normal;
+  }
+
+  .pin-card p {
+    margin: 0 0 22px;
+    font-size: 0.88rem;
+    color: #6B6354;
+    font-style: italic;
+  }
+
+  .pin-input {
+    width: 100%;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1.4rem;
+    letter-spacing: 0.5em;
+    text-align: center;
+    padding: 12px 10px;
+    border: 1px solid #C9BFA6;
+    background: var(--cream);
+    color: var(--ink);
+    margin-bottom: 16px;
+  }
+  .pin-input:focus {
+    outline: 2px solid var(--gold);
+    outline-offset: 1px;
+  }
+
+  .pin-error {
+    min-height: 1.2em;
+    color: var(--red-flag);
+    font-size: 0.82rem;
+    margin-bottom: 14px;
+    font-family: 'Courier New', Courier, monospace;
+  }
+
+  .pin-submit {
+    width: 100%;
+    background: var(--navy);
+    color: var(--cream);
+    padding: 12px;
+    font-family: Georgia, serif;
+    font-size: 0.95rem;
+    border: none;
+    cursor: pointer;
+  }
+  .pin-submit:hover { background: var(--navy-deep); }
+
   footer {
     text-align: center;
     padding: 24px;
@@ -363,6 +437,18 @@
 </style>
 </head>
 <body>
+
+<div id="pinGate">
+  <div class="pin-card">
+    <h2>The Duty Desk</h2>
+    <p>Enter your access PIN to continue</p>
+    <input type="password" inputmode="numeric" maxlength="6" class="pin-input" id="pinInput" placeholder="&middot;&middot;&middot;&middot;">
+    <div class="pin-error" id="pinError"></div>
+    <button class="pin-submit" id="pinSubmit">Unlock</button>
+  </div>
+</div>
+
+<div id="appContent" style="display:none;">
 
 <header>
   <div class="header-inner">
@@ -424,7 +510,52 @@
   Prototype &mdash; for internal review only. Not legal advice. &copy; 2026 Attorney Broker Services, LLC.
 </footer>
 
+</div>
+
 <script>
+// ---------- PIN gate ----------
+const DUTY_DESK_PIN = "0247";
+const PIN_STORAGE_KEY = "duty_desk_unlocked";
+
+const pinGate = document.getElementById('pinGate');
+const appContent = document.getElementById('appContent');
+const pinInput = document.getElementById('pinInput');
+const pinError = document.getElementById('pinError');
+const pinSubmit = document.getElementById('pinSubmit');
+
+function unlockApp() {
+  pinGate.classList.add('hidden');
+  appContent.style.display = 'block';
+}
+
+function checkPin() {
+  const entered = pinInput.value.trim();
+  if (entered === DUTY_DESK_PIN) {
+    try { localStorage.setItem(PIN_STORAGE_KEY, "true"); } catch (e) { /* ignore storage errors */ }
+    pinError.textContent = '';
+    unlockApp();
+  } else {
+    pinError.textContent = "That PIN didn't match. Try again.";
+    pinInput.value = '';
+    pinInput.focus();
+  }
+}
+
+pinSubmit.addEventListener('click', checkPin);
+pinInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') checkPin();
+});
+
+(function initGate() {
+  let alreadyUnlocked = false;
+  try { alreadyUnlocked = localStorage.getItem(PIN_STORAGE_KEY) === "true"; } catch (e) { /* ignore */ }
+  if (alreadyUnlocked) {
+    unlockApp();
+  } else {
+    pinInput.focus();
+  }
+})();
+
 const CASES = [
   {
     tag: "SELLER REPRESENTATION",
