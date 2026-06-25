@@ -546,24 +546,18 @@ verdict should be "violation" if the response would break a statutory duty or tr
   const userPrompt = `CASE: ${c.title}\n\nSITUATION:\n${c.narrative.join(' ')}\n\nQUESTION POSED TO AGENT: ${c.question}\n\nAGENT'S WRITTEN RESPONSE:\n"${responseText}"\n\nReview this response now.`;
 
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetch("/.netlify/functions/review", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages: [{ role: "user", content: userPrompt }]
-      })
+      body: JSON.stringify({ system: systemPrompt, userPrompt: userPrompt })
     });
 
-    if (!response.ok) throw new Error("API error: " + response.status);
+    if (!response.ok) throw new Error("Function error: " + response.status);
 
     const data = await response.json();
-    const textBlock = data.content.find(b => b.type === "text");
-    if (!textBlock) throw new Error("No text in response");
+    if (!data.text) throw new Error("No text in response");
 
-    const clean = textBlock.text.replace(/```json|```/g, "").trim();
+    const clean = data.text.replace(/```json|```/g, "").trim();
     const parsed = JSON.parse(clean);
 
     renderRuling(parsed);
